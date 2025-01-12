@@ -1,6 +1,9 @@
-# Robot + AI contribution-calendar art
+# Contribution-calendar pixel art
 
-Original pixel art with three robot + AI motifs across January-October 2026.
+Original generated pixel art:
+
+- **2025:** MY NINJA WAY lettering centered on the calendar. [Generator](./New-NinjaArt.ps1) / [date-count plan](./commit-plan-2025.csv).
+- **2026:** Three robot + AI motifs across January-October. [Generator](./New-RobotAiArt.ps1) / [date-count plan](./commit-plan.csv).
 
 **The commits in this repository are intentionally backdated, generated artwork.
 They do not represent software development performed on those dates.**
