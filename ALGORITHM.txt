@@ -11,9 +11,10 @@ software development on those historical dates."
 This project uses the idea popularized by gelstudios/gitfiti:
 https://github.com/gelstudios/gitfiti
 
-We did not run gitfiti.py or use the exact same script for both designs.
-We wrote two PowerShell scripts sharing the same core algorithm:
+We did not run gitfiti.py. We wrote three PowerShell scripts sharing the
+same core algorithm:
 
+- New-VeggieArt.ps1: renders EAT YOUR VEGGIES identically for 2023 and 2024.
 - New-RobotAiArt.ps1: repeats a fixed robot + AI bitmap in January-October 2026.
 - New-NinjaArt.ps1: assembles and centers MY NINJA WAY lettering in 2025.
 
@@ -39,7 +40,7 @@ That is a 13-week-wide, seven-day-high tile.
 
 2. ALIGN THE ARTWORK WITH COMPLETE WEEKS
 
-The first day of a year is not necessarily a Sunday. Both scripts find the
+The first day of a year is not necessarily a Sunday. All three scripts find the
 first Sunday on or after the requested start date:
 
   firstSunday = start + ((7 - start.DayOfWeek) modulo 7) days
@@ -53,6 +54,30 @@ those boundary weeks, hiding cells outside the selected date range.
 
 
 3. POSITION THE DESIGN
+
+2023 AND 2024: FULL-HEIGHT EAT YOUR VEGGIES
+
+The shared vegetable-lettering script uses seven-row glyphs. Most letters
+are three columns wide; E and S use two columns, and I uses one.
+One blank column separates adjacent letters. Empty space glyphs acquire a
+separator on either side, producing two blank columns between words.
+
+  Total glyph width = 36 weeks
+  Separators = 15 weeks
+  Phrase width = 51 weeks
+
+2023 has 52 complete weeks starting January 1; 2024 has 51 starting January 7.
+In both cases:
+
+  offset = floor((completeWeeks - 51) / 2) = 0
+
+The bitmap is identical, but the dates differ. January 1 begins the first
+calendar column in 2023; January 7 begins the second in 2024, after a partial
+boundary week. A calendar therefore shifts the same bitmap by one column.
+
+A three-row, two-line layout was previewed but rejected as difficult to read.
+It was never committed. The published version uses one seven-row text line
+without a smiley so the entire phrase fits.
 
 2026: REPEAT THE ROBOT + AI TILE
 
@@ -101,7 +126,7 @@ For the centered lettering:
 
   weekIndex = offset + bitmapColumn
 
-For either design:
+For all designs:
 
   date = firstSunday + (weekIndex * 7 + bitmapRow) days
 
@@ -124,8 +149,8 @@ The preview uses the date lookup set to decide which cells are green.
 It shows artwork only; it does not fetch or combine existing GitHub contributions.
 
 The scripts return before any Git changes unless -CreateCommits is supplied.
-Their years and designs are fixed constants, not automatically selected from
-the current year.
+The original 2025/2026 scripts use fixed years. New-VeggieArt.ps1 accepts only
+-Year 2023 or -Year 2024. No script automatically chooses the current year.
 
 
 6. CREATE INTENTIONALLY BACKDATED COMMITS
@@ -169,11 +194,17 @@ The 2025 script appends to the existing personal art repository. It checks:
 It also verifies the total added commit count and that the old HEAD is still
 an ancestor of the new HEAD.
 
+The shared 2023/2024 script uses similar repository, remote, branch, identity,
+clean-tree, count, and ancestry checks. It refuses an existing plan for the
+selected year, preventing duplicate generation. A generator already stored in
+the repository must have the same file hash as the source before the second
+year is added. Each year's CSV enters its first artwork commit.
+
 Appending commits with 2025 timestamps after commits with 2026 timestamps is
 valid: parent links determine Git history order, while the historical dates
 determine calendar attribution. No existing commits were rewritten.
 
-Neither script pushes automatically. We separately pushed main without force
+None of the scripts pushes automatically. We separately pushed main without force
 and verified that GitHub's main pointed to the same commit as the local branch.
 
 For the calendar to attribute these commits to the profile, the author email
@@ -182,6 +213,14 @@ eligible branch, such as this repository's default branch, main.
 
 
 8. FINAL ARTWORK COUNTS
+
+2023 EAT YOUR VEGGIES:
+  158 lit dates * 4 commits = 632 artwork commits
+  Lit dates: January 1-December 23, 2023
+
+2024 EAT YOUR VEGGIES:
+  158 lit dates * 4 commits = 632 artwork commits
+  Lit dates: January 7-December 28, 2024
 
 2026 robot + AI:
   3 motifs * 47 lit pixels = 141 lit dates
@@ -192,7 +231,7 @@ eligible branch, such as this repository's default branch, main.
   141 lit dates * 4 commits = 564 artwork commits
   Lit dates: January 12-December 16, 2025
 
-Total generated artwork: 1,128 commits.
+Total generated artwork: 2,392 commits.
 Ordinary later documentation commits are additional, not part of these counts.
 
 
@@ -203,10 +242,13 @@ repository prevents generated HTML previews from cluttering the working tree:
 
   .\New-RobotAiArt.ps1 -OutputDirectory C:\temp\robot-ai-preview
   .\New-NinjaArt.ps1 -OutputDirectory C:\temp\ninja-way-preview
+  .\New-VeggieArt.ps1 -Year 2023 -OutputDirectory C:\temp\veggie-preview
+  .\New-VeggieArt.ps1 -Year 2024 -OutputDirectory C:\temp\veggie-preview
 
 Do not add -CreateCommits to inspect the art. The creation modes were designed
 for the original one-time setup, not for regenerating commits in this published
-repository. In particular, the 2025 mode deliberately refuses a second run.
+repository. In particular, the 2025 mode and each vegetable-art year deliberately
+refuse a second run.
 
 
 10. COST AND LIMITATIONS

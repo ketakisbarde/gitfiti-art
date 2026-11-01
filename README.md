@@ -2,6 +2,8 @@
 
 Original generated pixel art:
 
+- **2023:** Full-height EAT YOUR VEGGIES lettering. [Generator](./New-VeggieArt.ps1) / [date-count plan](./commit-plan-2023.csv).
+- **2024:** The same EAT YOUR VEGGIES bitmap. [Generator](./New-VeggieArt.ps1) / [date-count plan](./commit-plan-2024.csv).
 - **2025:** MY NINJA WAY lettering centered on the calendar. [Generator](./New-NinjaArt.ps1) / [date-count plan](./commit-plan-2025.csv).
 - **2026:** Three robot + AI motifs across January-October. [Generator](./New-RobotAiArt.ps1) / [date-count plan](./commit-plan.csv).
 
