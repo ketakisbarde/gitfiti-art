@@ -198,7 +198,9 @@ The shared 2023/2024 script uses similar repository, remote, branch, identity,
 clean-tree, count, and ancestry checks. It refuses an existing plan for the
 selected year, preventing duplicate generation. A generator already stored in
 the repository must have the same file hash as the source before the second
-year is added. Each year's CSV enters its first artwork commit.
+year is added. Each year's CSV enters its first artwork commit. The generator
+now also requires local HEAD to match published main before adding another year.
+Publish and verify each year separately rather than accumulating a large push.
 
 Appending commits with 2025 timestamps after commits with 2026 timestamps is
 valid: parent links determine Git history order, while the historical dates
@@ -231,7 +233,9 @@ eligible branch, such as this repository's default branch, main.
   141 lit dates * 4 commits = 564 artwork commits
   Lit dates: January 12-December 16, 2025
 
-Total generated artwork: 2,392 commits.
+Total original generated artwork: 2,392 commits.
+An additional 265 forward-only 2023 repair commits are described below.
+Total artwork commits including that repair: 2,657.
 Ordinary later documentation commits are additional, not part of these counts.
 
 
@@ -267,3 +271,43 @@ GitHub may take time to refresh the contribution calendar.
 
 The repository transparently identifies the commits as generated artwork.
 It should not be presented as evidence of development activity on those dates.
+
+
+11. WHY 2023 NEEDED A FORWARD-ONLY REPAIR
+
+The original 2023 and 2024 artwork, plus documentation, were published together.
+The public 2023 calendar showed 367 contributions instead of the 632 planned.
+Comparing every public date with the CSV found:
+
+  91 planned dates fully visible.
+  67 planned dates missing or partially counted.
+  265 missing contributions in total.
+  No lit dates outside the planned artwork.
+
+The missing pixels were between January 1 and June 7, 2023. This was incomplete
+calendar attribution after the large push, not a bitmap alignment error. We do
+not treat an undocumented processing limit as a guaranteed GitHub API contract.
+
+Repair-2023Art.ps1 reads the public calendar's accessible daily-count tooltips.
+For each original planned date it calculates:
+
+  missing = max(0, expected public count - currently visible public count)
+
+The snapshot in repair-plan-2023.csv records Date, Expected, GitHubBefore,
+and MissingCommits. Only positive deficits produce new backdated commits.
+No reset, force push, deletion, or rewriting of existing commits is performed.
+
+The script refuses a duplicate repair, validates calendar markup and repository
+identity, and keeps the repair batch below 1,000 commits as a conservative limit.
+Its default mode only inspects counts and writes the snapshot; -CreateCommits
+is needed to change history. Publication and live-calendar verification are
+separate steps.
+
+The 265 added commits bring currently visible counts toward the original target
+of four per planned date. They also increase the repository's 2023 commit total
+from 632 to 897. The original CSV remains the intended public pixel/count plan,
+not a complete inventory of repair commits.
+
+If GitHub later indexes the previously missing original commits, some pixels
+can become darker. Their positions still match the word. Never repeatedly add
+repairs merely because a just-pushed graph has not refreshed yet.

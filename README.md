@@ -18,3 +18,8 @@ Existing contributions and GitHub's color scale can affect the appearance.
 
 For a step-by-step explanation, formulas, and safe preview commands, see
 [ALGORITHM.txt](./ALGORITHM.txt).
+
+The 2023 calendar initially omitted some published commits. A forward-only
+[repair script](./Repair-2023Art.ps1) added the missing public counts using this
+[snapshot](./repair-plan-2023.csv). The original artwork commits were preserved.
+For future additions, publish and verify one year before generating another.

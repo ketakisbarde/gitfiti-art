@@ -155,6 +155,12 @@ $destinationPlan = Join-Path $repo "commit-plan-$Year.csv"
 if (Test-Path -LiteralPath $destinationPlan) {
     throw "A $Year plan already exists; refusing duplicate artwork generation."
 }
+# Publish one year before generating another to avoid accumulating large pushes.
+$localTip = Invoke-ArtGit -Arguments @('rev-parse', 'HEAD')
+$published = @(Invoke-ArtGit -Arguments @('ls-remote', 'origin', 'refs/heads/main'))
+if ($published.Count -ne 1 -or $published[0].Split("`t")[0] -ne $localTip) {
+    throw 'Publish and verify the existing local history before adding another year.'
+}
 $email = Invoke-ArtGit -Arguments @('config', '--local', '--get', 'user.email')
 if ($email -ne 'ketakibarde97@gmail.com') { throw 'Unexpected personal commit email.' }
 $destinationScript = Join-Path $repo 'New-VeggieArt.ps1'
