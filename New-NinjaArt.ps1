@@ -21,6 +21,7 @@ $start = [datetime]'2025-01-01'
 $end = [datetime]'2025-12-31'
 if ($end -gt (Get-Date).Date) { throw 'Artwork dates must be in the past.' }
 $firstSunday = $start.AddDays((7 - [int]$start.DayOfWeek) % 7)
+# Glyphs have seven day rows; their widths vary to fit the phrase into one year.
 $letters = @{
     M = @('10001', '11011', '10101', '10101', '10001', '10001', '10001')
     Y = @('101', '101', '101', '010', '010', '010', '010')
@@ -32,6 +33,7 @@ $letters = @{
     ' ' = @('0', '0', '0', '0', '0', '0', '0')
 }
 $word = 'MY NINJA WAY'
+# Join glyph rows with one blank week. A space glyph makes word gaps three weeks wide.
 $rows = @(
     for ($row = 0; $row -lt 7; $row++) {
         (@(foreach ($character in $word.ToCharArray()) {
@@ -42,12 +44,14 @@ $rows = @(
 $width = $rows[0].Length
 $completeWeeks = [int][math]::Floor(($end.AddDays(1) - $firstSunday).TotalDays / 7)
 if ($width -gt $completeWeeks) { throw 'The word does not fit the year.' }
+# Divide unused complete weeks between the left and right margins.
 $offset = [int][math]::Floor(($completeWeeks - $width) / 2)
 $plan = [System.Collections.Generic.List[object]]::new()
 $litDates = [System.Collections.Generic.HashSet[string]]::new()
 for ($column = 0; $column -lt $width; $column++) {
     for ($row = 0; $row -lt 7; $row++) {
         if ($rows[$row][$column] -ne '1') { continue }
+        # Column selects the week; row selects Sunday (0) through Saturday (6).
         $date = $firstSunday.AddDays(($offset + $column) * 7 + $row)
         if ($date -lt $start -or $date -gt $end) { throw 'Pixel outside 2025.' }
         $key = $date.ToString('yyyy-MM-dd')
@@ -59,6 +63,7 @@ $output = [System.IO.Path]::GetFullPath($OutputDirectory)
 [void][System.IO.Directory]::CreateDirectory($output)
 $planPath = Join-Path $output 'commit-plan-2025.csv'
 $plan | Export-Csv -LiteralPath $planPath -NoTypeInformation -Encoding utf8
+# Boundary weeks belong in the preview, but dates outside 2025 stay hidden.
 $gridStart = $start.AddDays(-[int]$start.DayOfWeek)
 $gridWeeks = [int][math]::Ceiling(($end.AddDays(1) - $gridStart).TotalDays / 7)
 $cells = [System.Text.StringBuilder]::new()
@@ -107,6 +112,7 @@ $previewPath = Join-Path $output 'preview-2025.html'
 Write-Output "Preview: $previewPath"
 Write-Output "Plan: $planPath"
 Write-Output "Word: $word; width: $width weeks; lit dates: $($plan.Count); commits: $total"
+# Preview can be repeated safely; creating the artwork is a guarded, one-time operation.
 if (-not $CreateCommits) { return }
 
 $repo = [System.IO.Path]::GetFullPath($Repository)
@@ -136,6 +142,7 @@ if (Test-Path -LiteralPath (Join-Path $repo 'New-NinjaArt.ps1')) {
 $email = Invoke-ArtGit -Arguments @('config', '--local', '--get', 'user.email')
 if ($email -ne 'ketakibarde97@gmail.com') { throw 'Unexpected personal commit email.' }
 $before = [int](Invoke-ArtGit -Arguments @('rev-list', '--count', 'HEAD'))
+# Keep the old tip so the final ancestry check can prove no existing history was rewritten.
 $originalHead = Invoke-ArtGit -Arguments @('rev-parse', 'HEAD')
 $readmePath = Join-Path $repo 'README.md'
 $readme = [System.IO.File]::ReadAllText($readmePath)
@@ -157,6 +164,8 @@ Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $repo 'New-NinjaAr
 Copy-Item -LiteralPath $planPath -Destination (Join-Path $repo 'commit-plan-2025.csv')
 Invoke-ArtGit -Arguments @('add', 'README.md', 'New-NinjaArt.ps1', 'commit-plan-2025.csv')
 
+# Files enter the first pixel commit. All remaining commits may be empty.
+# These historical timestamps affect calendar dates, not the parent order of Git history.
 $oldAuthorDate = $env:GIT_AUTHOR_DATE
 $oldCommitterDate = $env:GIT_COMMITTER_DATE
 try {

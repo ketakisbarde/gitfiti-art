@@ -13,3 +13,6 @@ Inspired by the contribution-calendar art concept of
 
 The generator and date/count plan are included for transparency.
 Existing contributions and GitHub's color scale can affect the appearance.
+
+For a step-by-step explanation, formulas, and safe preview commands, see
+[ALGORITHM.txt](./ALGORITHM.txt).

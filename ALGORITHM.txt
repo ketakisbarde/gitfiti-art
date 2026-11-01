@@ -1,0 +1,227 @@
+CONTRIBUTION-CALENDAR ART: HOW IT WORKS
+=====================================
+
+SHORT EXPLANATION
+
+"I created original contribution-calendar pixel art with PowerShell. The script
+maps a bitmap onto dates, then creates intentionally backdated Git commits in
+a separate art repository. These commits are artwork, not a claim that I did
+software development on those historical dates."
+
+This project uses the idea popularized by gelstudios/gitfiti:
+https://github.com/gelstudios/gitfiti
+
+We did not run gitfiti.py or use the exact same script for both designs.
+We wrote two PowerShell scripts sharing the same core algorithm:
+
+- New-RobotAiArt.ps1: repeats a fixed robot + AI bitmap in January-October 2026.
+- New-NinjaArt.ps1: assembles and centers MY NINJA WAY lettering in 2025.
+
+
+1. THINK OF THE CALENDAR AS A BITMAP
+
+GitHub's calendar has seven rows: Sunday at row 0 through Saturday at row 6.
+Each column represents a week. Each cell therefore corresponds to one date.
+
+A bitmap uses:
+  1       = a lit pixel; create artwork commits on that date.
+  0/space = a blank pixel; create no artwork commits on that date.
+
+Blank pixels do not remove contributions that already exist.
+
+Example: the top row of the robot + AI tile is:
+  00100 010 111
+
+The first five columns belong to the robot, followed by a blank column,
+three columns for A, another blank column, and three columns for I.
+That is a 13-week-wide, seven-day-high tile.
+
+
+2. ALIGN THE ARTWORK WITH COMPLETE WEEKS
+
+The first day of a year is not necessarily a Sunday. Both scripts find the
+first Sunday on or after the requested start date:
+
+  firstSunday = start + ((7 - start.DayOfWeek) modulo 7) days
+
+The complete-week count uses an exclusive end boundary:
+
+  completeWeeks = floor((end + 1 day - firstSunday) / 7 days)
+
+This keeps artwork out of partial boundary weeks. The HTML preview still shows
+those boundary weeks, hiding cells outside the selected date range.
+
+
+3. POSITION THE DESIGN
+
+2026: REPEAT THE ROBOT + AI TILE
+
+  tileWidth = 13 weeks
+  gap = 2 blank weeks between repetitions
+  period = tileWidth + gap = 15 weeks
+  completeWeeks = 43
+
+There is no need for a gap after the last repetition:
+
+  R * tileWidth + (R - 1) * gap <= completeWeeks
+  R = floor((completeWeeks + gap) / period)
+  R = 3
+
+Three tiles and two gaps occupy exactly 43 complete weeks.
+The first complete week starts January 4, 2026.
+
+2025: ASSEMBLE AND CENTER MY NINJA WAY
+
+The lettering script stores each glyph as seven bitmap strings.
+Glyphs are three, four, or five columns wide.
+It concatenates corresponding glyph rows to form the phrase.
+
+A single blank column separates characters. A space character itself contributes
+one blank column, so a word boundary has three blank columns in total.
+
+  phraseWidth = 49 weeks
+  completeWeeks = 51
+  offset = floor((completeWeeks - phraseWidth) / 2) = 1 week
+
+The first complete week begins January 5, 2025, so the lettering begins in the
+week of January 12. Its 49-week bounding box ends on December 20. The final
+actual lit date is December 16 because the remaining cells in that box are blank.
+
+The script contains the glyphs needed for this particular phrase; it is not
+a general-purpose font or arbitrary-text renderer.
+
+
+4. MAP EACH LIT PIXEL TO A DATE
+
+For the repeating robot:
+
+  weekIndex = repetitionIndex * period + bitmapColumn
+
+For the centered lettering:
+
+  weekIndex = offset + bitmapColumn
+
+For either design:
+
+  date = firstSunday + (weekIndex * 7 + bitmapRow) days
+
+Example from the robot tile:
+  firstSunday = January 4, 2026
+  repetitionIndex = 0, bitmapColumn = 0, bitmapRow = 2
+  date = January 6, 2026
+
+Every lit date is checked against the allowed range, added to a lookup set,
+and recorded in the CSV plan with its requested commit count.
+
+
+5. GENERATE A PREVIEW BEFORE TOUCHING GIT HISTORY
+
+The default invocation writes:
+- An HTML calendar preview.
+- A CSV containing lit dates and commit counts.
+
+The preview uses the date lookup set to decide which cells are green.
+It shows artwork only; it does not fetch or combine existing GitHub contributions.
+
+The scripts return before any Git changes unless -CreateCommits is supplied.
+Their years and designs are fixed constants, not automatically selected from
+the current year.
+
+
+6. CREATE INTENTIONALLY BACKDATED COMMITS
+
+Each lit date receives four commits by default:
+
+  GIT_AUTHOR_DATE    = selected date at 12:00 UTC
+  GIT_COMMITTER_DATE = selected date at 12:00 UTC
+  git commit --allow-empty
+
+Author date records when the contribution is attributed to its author.
+Committer date records when the commit is recorded by its committer.
+Both are explicitly set to the selected historical date.
+
+UTC noon avoids placing these particular dates near midnight in the Pacific
+time zone used for this project; it is not a guarantee for every time zone.
+
+The README, generator, and plan are staged before the first artwork commit.
+That first commit records the files. Later commits need not change any files,
+which is why --allow-empty is used.
+
+The scripts save and restore the caller's date environment variables in a
+try/finally block. Signing is disabled for each generated commit command,
+without changing global signing configuration.
+
+Four commits is a count, not a request for GitHub's fourth green shade.
+GitHub decides the actual colors based on contribution counts.
+
+
+7. PRESERVE HISTORY AND PUBLISH SEPARATELY
+
+The 2026 script creates a new repository and refuses to overwrite an existing
+destination. It configures identity only in that new repository.
+
+The 2025 script appends to the existing personal art repository. It checks:
+- The repository root, expected GitHub remote, and main branch.
+- A clean working tree and the expected personal commit email.
+- That the 2025 generator has not already been added.
+- The expected original README before updating it.
+
+It also verifies the total added commit count and that the old HEAD is still
+an ancestor of the new HEAD.
+
+Appending commits with 2025 timestamps after commits with 2026 timestamps is
+valid: parent links determine Git history order, while the historical dates
+determine calendar attribution. No existing commits were rewritten.
+
+Neither script pushes automatically. We separately pushed main without force
+and verified that GitHub's main pointed to the same commit as the local branch.
+
+For the calendar to attribute these commits to the profile, the author email
+must be associated with that GitHub account and the commits must be on an
+eligible branch, such as this repository's default branch, main.
+
+
+8. FINAL ARTWORK COUNTS
+
+2026 robot + AI:
+  3 motifs * 47 lit pixels = 141 lit dates
+  141 dates * 4 commits = 564 artwork commits
+  Lit dates: January 6-October 31, 2026
+
+2025 MY NINJA WAY:
+  141 lit dates * 4 commits = 564 artwork commits
+  Lit dates: January 12-December 16, 2025
+
+Total generated artwork: 1,128 commits.
+Ordinary later documentation commits are additional, not part of these counts.
+
+
+9. SAFE PREVIEW COMMANDS
+
+Run these from the repository directory. Using an output directory outside the
+repository prevents generated HTML previews from cluttering the working tree:
+
+  .\New-RobotAiArt.ps1 -OutputDirectory C:\temp\robot-ai-preview
+  .\New-NinjaArt.ps1 -OutputDirectory C:\temp\ninja-way-preview
+
+Do not add -CreateCommits to inspect the art. The creation modes were designed
+for the original one-time setup, not for regenerating commits in this published
+repository. In particular, the 2025 mode deliberately refuses a second run.
+
+
+10. COST AND LIMITATIONS
+
+The bitmap/date calculations scan seven rows per artwork column. Preview
+generation scans seven cells per calendar week. The Git phase creates one
+commit at a time and dominates execution time.
+
+With W calendar weeks, P lit dates, and C commits per lit date, this is roughly:
+  Work: O(7W + P*C), treating glyph processing as bounded by the calendar width.
+  Storage during generation: O(P + 7W) for the plan and HTML cells.
+
+The calendar is only seven pixels high, so lettering is intentionally compact.
+Real contributions can obscure blank cells and affect green shades.
+GitHub may take time to refresh the contribution calendar.
+
+The repository transparently identifies the commits as generated artwork.
+It should not be presented as evidence of development activity on those dates.

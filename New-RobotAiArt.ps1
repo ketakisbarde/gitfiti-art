@@ -31,6 +31,7 @@ if ($end.Date -gt (Get-Date).Date) {
 
 # Start artwork on a complete Sunday-Saturday week.
 $firstSunday = $start.AddDays((7 - [int]$start.DayOfWeek) % 7)
+# Each string is a day row; character columns become weeks. Only '1' is lit.
 $tile = @(
     '00100 010 111',
     '01110 101 010',
@@ -43,6 +44,7 @@ $tile = @(
 $tileWidth = $tile[0].Length
 $period = $tileWidth + 2
 $completeWeeks = [int][math]::Floor(($end.AddDays(1) - $firstSunday).TotalDays / 7)
+# R tiles occupy R * tileWidth + (R - 1) * 2 weeks: no trailing gap is needed.
 $repetitions = [int][math]::Floor(($completeWeeks + 2) / $period)
 if ($repetitions -lt 1) {
     throw 'The date range does not contain a complete robot + AI motif.'
@@ -54,6 +56,7 @@ for ($repeat = 0; $repeat -lt $repetitions; $repeat++) {
     for ($column = 0; $column -lt $tileWidth; $column++) {
         for ($row = 0; $row -lt 7; $row++) {
             if ($tile[$row][$column] -ne '1') { continue }
+            # Move to this repetition's week, then select Sunday (0) through Saturday (6).
             $date = $firstSunday.AddDays(($repeat * $period + $column) * 7 + $row)
             if ($date -lt $start -or $date -gt $end) {
                 throw "Artwork date outside the requested range: $date"
@@ -74,6 +77,7 @@ $output = [System.IO.Path]::GetFullPath($OutputDirectory)
 $planPath = Join-Path $output 'commit-plan.csv'
 $plan | Export-Csv -LiteralPath $planPath -NoTypeInformation -Encoding utf8
 
+# Include boundary weeks in the preview, but hide dates outside the requested range.
 $gridStart = $start.AddDays(-[int]$start.DayOfWeek)
 $gridWeeks = [int][math]::Ceiling(($end.AddDays(1) - $gridStart).TotalDays / 7)
 $cells = [System.Text.StringBuilder]::new()
@@ -140,6 +144,7 @@ Write-Output "Preview: $previewPath"
 Write-Output "Plan: $planPath"
 Write-Output "Motifs: $repetitions; lit days: $($plan.Count); planned commits: $total"
 
+# Preview is the default; Git history changes require the explicit switch.
 if (-not $CreateCommits) { return }
 if ([string]::IsNullOrWhiteSpace($CommitEmail) -or
     $CommitEmail -notmatch '^[^\s@]+@[^\s@]+$') {
@@ -187,6 +192,8 @@ Copy-Item -LiteralPath $PSCommandPath -Destination (Join-Path $repo 'New-RobotAi
 Copy-Item -LiteralPath $planPath -Destination (Join-Path $repo 'commit-plan.csv')
 Invoke-ArtGit -Arguments @('add', 'README.md', 'New-RobotAiArt.ps1', 'commit-plan.csv')
 
+# Staged files enter the first pixel commit; later commits can be empty.
+# Both timestamps are backdated, and the caller's environment is restored afterward.
 $oldAuthorDate = $env:GIT_AUTHOR_DATE
 $oldCommitterDate = $env:GIT_COMMITTER_DATE
 try {
